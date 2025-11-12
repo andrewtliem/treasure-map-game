@@ -1,6 +1,6 @@
 # Treasure Map Adventure
 
-Treasure Map Adventure is a browser-based coding playground where students learn computational thinking by steering an explorer across grid-based maps using simple pseudo-code commands. Learners type algorithms (MOVE, TURN LEFT, REPEAT, IF/ELSE, WHILE, etc.), then run or step through them to watch the avatar reach the treasure while avoiding obstacles.
+Treasure Map Adventure is a browser-based coding playground designed to teach **computational thinking**. Students break problems into commands, reason about control flow, and debug logic as they steer an explorer across grid-based maps using simple pseudo-code (MOVE, TURN LEFT, REPEAT, IF/ELSE, WHILE, etc.). They refine one algorithm, then run or step through it to watch the avatar reach the treasure while avoiding obstacles.
 
 The project now includes two distinct modes:
 
