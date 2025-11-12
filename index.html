@@ -377,7 +377,7 @@
         <label for="editor">Algorithm (one instruction per line)</label>
         <textarea id="editor" spellcheck="false" aria-label="Algorithm editor"></textarea>
         <div class="footer-note">Example commands: <code>MOVE</code>, <code>TURN LEFT</code>, <code>TURN RIGHT</code>, <code>JUMP</code>, <code>PICK TREASURE</code>, <code>REPEAT 3 TIMES</code>, <code>IF PATH AHEAD CLEAR THEN</code>, <code>ELSE</code>, <code>ENDIF</code>, <code>WHILE NOT ON TREASURE DO</code>, <code>ENDWHILE</code></div>
-        <div class="help" style="margin-top:6px">Conditions you can test: <code>PATH AHEAD CLEAR</code>, <code>PATH AHEAD BLOCKED</code>, <code>ON TREASURE</code>. Prefix with <code>NOT</code> to invert. Need to hop over trouble? Use <code>JUMP</code> to leap straight ahead by one cell without changing direction.</div>
+        <div class="help" style="margin-top:6px">Conditions you can test: <code>PATH AHEAD CLEAR</code>, <code>PATH AHEAD BLOCKED</code>, <code>ON TREASURE</code>, <code>JUMP CLEAR</code>, <code>JUMP BLOCKED</code>. Prefix with <code>NOT</code> to invert. Need to hop over trouble? Use <code>JUMP</code> to leap straight ahead by one cell without changing direction.</div>
       </div>
 
       <div class="practice-panel">
@@ -496,7 +496,9 @@
     const CONDITION_MAP = {
       'PATH AHEAD CLEAR': {key:'PATH_AHEAD_CLEAR', label:'PATH AHEAD CLEAR', defaultNegated:false},
       'PATH AHEAD BLOCKED': {key:'PATH_AHEAD_CLEAR', label:'PATH AHEAD BLOCKED', defaultNegated:true},
-      'ON TREASURE': {key:'ON_TREASURE', label:'ON TREASURE', defaultNegated:false}
+      'ON TREASURE': {key:'ON_TREASURE', label:'ON TREASURE', defaultNegated:false},
+      'JUMP CLEAR': {key:'JUMP_CLEAR', label:'JUMP CLEAR', defaultNegated:false},
+      'JUMP BLOCKED': {key:'JUMP_CLEAR', label:'JUMP BLOCKED', defaultNegated:true}
     };
     const HALL_OF_FAME_KEY = 'treasure-hof';
     const PLAYER_NAME_KEY = 'treasure-player-name';
@@ -1004,6 +1006,12 @@ ENDIF`;
       if(obstacles.has(coordId(next.r,next.c))) return false;
       return true;
     }
+    function canJumpForward(){
+      const landing = getForwardCell(2);
+      if(!inBounds(landing.r,landing.c)) return false;
+      if(obstacles.has(coordId(landing.r,landing.c))) return false;
+      return true;
+    }
 
     function evaluateCondition(condition, contextLabel){
       let value;
@@ -1011,6 +1019,8 @@ ENDIF`;
         value = canMoveForward();
       } else if(condition.key === 'ON_TREASURE'){
         value = avatar.r===treasurePos.r && avatar.c===treasurePos.c;
+      } else if(condition.key === 'JUMP_CLEAR'){
+        value = canJumpForward();
       } else {
         value = false;
       }
