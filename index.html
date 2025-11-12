@@ -376,8 +376,8 @@
       <div class="panel-block">
         <label for="editor">Algorithm (one instruction per line)</label>
         <textarea id="editor" spellcheck="false" aria-label="Algorithm editor"></textarea>
-        <div class="footer-note">Example commands: <code>MOVE</code>, <code>TURN LEFT</code>, <code>TURN RIGHT</code>, <code>PICK TREASURE</code>, <code>REPEAT 3 TIMES</code>, <code>IF PATH AHEAD CLEAR THEN</code>, <code>ELSE</code>, <code>ENDIF</code>, <code>WHILE NOT ON TREASURE DO</code>, <code>ENDWHILE</code></div>
-        <div class="help" style="margin-top:6px">Conditions you can test: <code>PATH AHEAD CLEAR</code>, <code>PATH AHEAD BLOCKED</code>, <code>ON TREASURE</code>. Prefix with <code>NOT</code> to invert.</div>
+        <div class="footer-note">Example commands: <code>MOVE</code>, <code>TURN LEFT</code>, <code>TURN RIGHT</code>, <code>JUMP</code>, <code>PICK TREASURE</code>, <code>REPEAT 3 TIMES</code>, <code>IF PATH AHEAD CLEAR THEN</code>, <code>ELSE</code>, <code>ENDIF</code>, <code>WHILE NOT ON TREASURE DO</code>, <code>ENDWHILE</code></div>
+        <div class="help" style="margin-top:6px">Conditions you can test: <code>PATH AHEAD CLEAR</code>, <code>PATH AHEAD BLOCKED</code>, <code>ON TREASURE</code>. Prefix with <code>NOT</code> to invert. Need to hop over trouble? Use <code>JUMP</code> to leap straight ahead by one cell without changing direction.</div>
       </div>
 
       <div class="practice-panel">
@@ -485,13 +485,14 @@
      *   TURN LEFT
      *   TURN RIGHT
      *   PICK TREASURE
+     *   JUMP
      *   REPEAT n TIMES ... ENDREPEAT
      *   IF condition THEN ... ELSE ... ENDIF
      *   WHILE condition DO ... ENDWHILE
      ***********************/
 
     // === Config & state ===
-    const ACTION_COMMANDS = new Set(['MOVE','TURN LEFT','TURN RIGHT','PICK TREASURE']);
+    const ACTION_COMMANDS = new Set(['MOVE','TURN LEFT','TURN RIGHT','PICK TREASURE','JUMP']);
     const CONDITION_MAP = {
       'PATH AHEAD CLEAR': {key:'PATH_AHEAD_CLEAR', label:'PATH AHEAD CLEAR', defaultNegated:false},
       'PATH AHEAD BLOCKED': {key:'PATH_AHEAD_CLEAR', label:'PATH AHEAD BLOCKED', defaultNegated:true},
@@ -539,6 +540,7 @@
     let treasureCollected = false;
     let currentMode = 'practice';
     let practiceSnapshot = null;
+    let pendingChallengeTimer = null;
     let gridSize = 6;
     let cells = []; // 2D array of cells
     let obstacles = new Set();
@@ -715,6 +717,12 @@
         li.innerHTML = `<span>#${idx+1} ${escapeHtml(entry.name)}</span><small>${entry.steps} steps</small>`;
         hallOfFameList.appendChild(li);
       });
+    }
+    function clearPendingChallengeTimer(){
+      if(pendingChallengeTimer){
+        clearTimeout(pendingChallengeTimer);
+        pendingChallengeTimer = null;
+      }
     }
     function getPlayerName(){
       return playerNameInput.value.trim();
@@ -980,13 +988,13 @@ ENDIF`;
       };
     }
 
-    function getForwardCell(){
+    function getForwardCell(steps=1){
       let nr = avatar.r;
       let nc = avatar.c;
-      if(avatar.dir===0) nr--;
-      else if(avatar.dir===1) nc++;
-      else if(avatar.dir===2) nr++;
-      else if(avatar.dir===3) nc--;
+      if(avatar.dir===0) nr -= steps;
+      else if(avatar.dir===1) nc += steps;
+      else if(avatar.dir===2) nr += steps;
+      else if(avatar.dir===3) nc -= steps;
       return {r:nr, c:nc};
     }
 
@@ -1064,6 +1072,14 @@ ENDIF`;
         avatar.dir = (avatar.dir + 3) % 4;
       } else if(cmd==='TURN RIGHT'){
         avatar.dir = (avatar.dir + 1) % 4;
+      } else if(cmd==='JUMP'){
+        const mid = getForwardCell(1);
+        const landing = getForwardCell(2);
+        if(!inBounds(mid.r,mid.c)) throw new Error('Jump would go off the map.');
+        if(!inBounds(landing.r,landing.c)) throw new Error('Jump would go off the map.');
+        if(obstacles.has(coordId(landing.r,landing.c))) throw new Error('Jump would land on an obstacle.');
+        avatar.r = landing.r;
+        avatar.c = landing.c;
       } else if(cmd==='PICK TREASURE'){
         if(avatar.r===treasurePos.r && avatar.c===treasurePos.c){
           log('🎉 Treasure picked! Well done.');
@@ -1115,6 +1131,7 @@ ENDIF`;
         perLevel:[]
       };
       placeMode = null;
+      clearPendingChallengeTimer();
       setChallengeUiState(true);
       log(`Challenge started for ${name}. Your algorithm will run on all maps without edits.`);
       runChallengeLevel();
@@ -1151,12 +1168,14 @@ ENDIF`;
       if(challengeState.levelIndex >= challengeLevels.length){
         finishChallenge('success');
       } else {
-        setTimeout(runChallengeLevel, 800);
+        clearPendingChallengeTimer();
+        pendingChallengeTimer = setTimeout(runChallengeLevel, 800);
       }
     }
 
     function finishChallenge(status){
       if(!challengeState) return;
+      clearPendingChallengeTimer();
       setChallengeUiState(false);
       if(status==='success'){
         log(`🏆 Challenge complete! Total steps: ${challengeState.totalSteps}`);
@@ -1316,6 +1335,7 @@ ENDIF`;
     }
 
     function resetGame(){
+      clearPendingChallengeTimer();
       if(runCompletionCallback){
         const cb = runCompletionCallback;
         runCompletionCallback = null;
