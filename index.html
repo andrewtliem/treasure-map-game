@@ -1,0 +1,1555 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Treasure Map Adventure — Computational Thinking</title>
+  <style>
+    :root{
+      --bg:#f2efe4;
+      --bg-accent:#ffedb4;
+      --card:#fffaf0;
+      --card-strong:#ffe0d2;
+      --text:#141414;
+      --muted:#4c4c4c;
+      --accent:#ff5a5f;
+      --accent-bold:#553bff;
+      --danger:#ff2d55;
+      --success:#03c988;
+      --border:#111;
+      --shadow:6px 6px 0 #111;
+      font-family: "Space Grotesk", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{
+      height:100%;
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      background-image:
+        linear-gradient(135deg, rgba(255,255,255,0.35) 0, transparent 40%),
+        repeating-linear-gradient(0deg, transparent 0, transparent 28px, rgba(0,0,0,0.03) 28px, rgba(0,0,0,0.03) 32px),
+        repeating-linear-gradient(90deg, transparent 0, transparent 28px, rgba(0,0,0,0.03) 28px, rgba(0,0,0,0.03) 32px);
+    }
+    body, button, input, select, textarea{
+      font-family:"Space Grotesk","Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    }
+    .wrap{
+      max-width:1180px;
+      margin:32px auto;
+      padding:24px;
+      display:grid;
+      grid-template-columns:360px 1fr;
+      gap:24px;
+      align-items:flex-start;
+    }
+    .card{
+      background:var(--card);
+      border:3px solid var(--border);
+      border-radius:18px;
+      padding:18px;
+      box-shadow:var(--shadow);
+    }
+    h1{
+      margin:0 0 10px;
+      font-size:24px;
+      letter-spacing:-0.5px;
+    }
+    p.lead{
+      margin:0 0 14px;
+      color:var(--muted);
+      font-size:14px;
+      font-weight:500;
+    }
+    .sidebar{display:flex;flex-direction:column;gap:16px}
+    label{font-size:13px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em}
+    textarea#editor{
+      width:100%;
+      height:260px;
+      background:#fff;
+      border:3px solid var(--border);
+      border-radius:14px;
+      padding:14px;
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+      font-size:13px;
+      line-height:1.5;
+      color:var(--text);
+      box-shadow:var(--shadow);
+    }
+    input[type=text]{
+      width:100%;
+      border:3px solid var(--border);
+      border-radius:14px;
+      padding:10px 12px;
+      font-weight:600;
+      font-size:14px;
+      background:#fff;
+      box-shadow:var(--shadow);
+    }
+    input[type=text].input-error{border-color:var(--danger)}
+    .footer-note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
+    .help{font-size:13px;color:var(--text);line-height:1.55;background:var(--card-strong);padding:10px 12px;border:3px solid var(--border);border-radius:12px;box-shadow:var(--shadow)}
+    .mode-switch{
+      display:flex;
+      gap:10px;
+      margin:10px 0 12px;
+    }
+    .mode-switch button{
+      flex:1;
+      border:3px solid var(--border);
+      border-radius:16px;
+      padding:10px 14px;
+      font-weight:800;
+      text-transform:uppercase;
+      background:#fff;
+      color:var(--text);
+      box-shadow:var(--shadow);
+      cursor:pointer;
+    }
+    .mode-switch button.active{
+      background:var(--accent-bold);
+      color:#fff;
+    }
+    .controls{display:flex;gap:10px;flex-wrap:wrap}
+    button{
+      border:3px solid var(--border);
+      border-radius:14px;
+      padding:10px 14px;
+      font-weight:700;
+      font-size:13px;
+      text-transform:uppercase;
+      letter-spacing:0.03em;
+      cursor:pointer;
+      background:var(--accent);
+      color:#fffaf0;
+      box-shadow:var(--shadow);
+      transition:transform 0.08s ease;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      line-height:1.1;
+      min-height:44px;
+      text-align:center;
+    }
+    button:hover{transform:translate(-2px,-2px)}
+    button:active{transform:translate(1px,1px)}
+    button.ghost{
+      background:var(--card-strong);
+      color:var(--text);
+    }
+    button.warn{background:var(--danger);color:#fff}
+    .board-wrap{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
+      width:100%;
+    }
+    .grid{
+      display:grid;
+      border:4px solid var(--border);
+      border-radius:22px;
+      padding:16px;
+      background:var(--bg-accent);
+      box-shadow:var(--shadow);
+    }
+    .cell{
+      width:56px;
+      height:56px;
+      border:3px solid var(--border);
+      border-radius:12px;
+      background:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      font-weight:700;
+      color:var(--text);
+    }
+    .coord{
+      position:absolute;
+      left:4px;
+      top:4px;
+      font-size:10px;
+      color:var(--muted);
+      font-weight:600;
+    }
+    .cell.obstacle{background:#111;color:#fff}
+    .cell.treasure{background:#ffe26a}
+    .cell.start{background:#9ff3ff}
+    .avatar{
+      width:38px;
+      height:38px;
+      border-radius:10px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#fff;
+      border:3px solid var(--border);
+      color:var(--accent-bold);
+      font-size:20px;
+      box-shadow:var(--shadow);
+    }
+    .log{
+      height:170px;
+      overflow:auto;
+      background:#fff;
+      padding:12px;
+      border:3px solid var(--border);
+      border-radius:16px;
+      color:var(--text);
+      font-size:13px;
+      box-shadow:var(--shadow);
+    }
+    .meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .small{font-size:13px;color:var(--text);font-weight:600;line-height:1.4}
+    .status{
+      padding:8px 12px;
+      border:3px solid var(--border);
+      border-radius:12px;
+      background:#fff;
+      text-transform:uppercase;
+      font-weight:800;
+    }
+    .success{color:var(--success)}
+    .error{color:var(--danger)}
+    .conf{display:flex;gap:10px}
+    input[type=range]{
+      width:160px;
+      accent-color:var(--accent-bold);
+    }
+    select{
+      border:3px solid var(--border);
+      border-radius:12px;
+      padding:6px;
+      font-weight:600;
+      box-shadow:var(--shadow);
+    }
+    code{
+      background:var(--bg-accent);
+      padding:2px 4px;
+      border-radius:6px;
+      border:2px solid var(--border);
+      display:inline-block;
+      margin:2px 2px;
+    }
+    .board-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      align-items:center;
+      width:100%;
+      margin-top:12px;
+    }
+    .board-actions .spacer{
+      flex:1 1 auto;
+      min-width:24px;
+    }
+    .board-actions .small{
+      font-size:12px;
+      font-weight:600;
+      color:var(--muted);
+    }
+    .button-stack{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      width:100%;
+    }
+    .button-stack button{
+      flex:1 1 calc(50% - 10px);
+      min-width:140px;
+    }
+    .panel-block{
+      margin-top:14px;
+      width:100%;
+    }
+    .panel-block:first-child{margin-top:0}
+    .panel-card{
+      border:3px solid var(--border);
+      border-radius:16px;
+      padding:14px;
+      background:#fff;
+      box-shadow:var(--shadow);
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .challenge-box{
+      border:3px solid var(--border);
+      border-radius:16px;
+      padding:14px;
+      background:var(--card-strong);
+      box-shadow:var(--shadow);
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    body:not(.mode-challenge) .challenge-box{display:none}
+    #hallOfFamePanel{
+      display:none;
+      width:100%;
+      border:3px solid var(--border);
+      border-radius:18px;
+      padding:14px;
+      background:#fff;
+      box-shadow:var(--shadow);
+    }
+    body.mode-challenge #hallOfFamePanel{display:block}
+    #hallOfFamePanel h3{
+      margin:0 0 8px;
+      font-size:16px;
+      text-transform:uppercase;
+      letter-spacing:0.05em;
+    }
+    .credits{
+      grid-column:1 / -1;
+      text-align:center;
+      margin-top:18px;
+      font-size:13px;
+      font-weight:600;
+      color:var(--muted);
+    }
+    .credits a{
+      color:var(--accent-bold);
+      text-decoration:none;
+      border-bottom:2px solid var(--border);
+      padding-bottom:2px;
+    }
+    .hof-list, .level-list{
+      list-style:none;
+      padding:0;
+      margin:8px 0 0;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .hof-list li, .level-list li{
+      padding:8px 12px;
+      border:3px solid var(--border);
+      border-radius:10px;
+      background:#fff;
+      font-weight:600;
+      display:flex;
+      justify-content:space-between;
+      box-shadow:var(--shadow);
+    }
+    .level-list li{
+      background:var(--bg-accent);
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:0.03em;
+    }
+    .hof-list small{
+      font-weight:500;
+      color:var(--muted);
+    }
+    /* responsive */
+    @media (max-width:980px){
+      .wrap{grid-template-columns:1fr;max-width:960px;padding:14px}
+      .grid .cell{width:48px;height:48px}
+      .board-wrap{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card sidebar">
+      <div>
+        <h1>Treasure Map Adventure</h1>
+        <p class="lead">Students write a sequence of commands to move the avatar to the treasure. Combine REPEAT/WHILE loops and IF/ELSE logic to keep the avatar safe.</p>
+      </div>
+
+      <div class="panel-block">
+        <label for="playerName">Player name</label>
+        <input id="playerName" type="text" placeholder="e.g., Ada L." />
+        <div class="footer-note">Enter your name to run programs and record high scores.</div>
+      </div>
+
+      <div class="panel-block">
+        <div class="mode-switch">
+          <button id="practiceModeBtn" class="active">Practice</button>
+          <button id="challengeModeBtn">Challenge</button>
+        </div>
+      </div>
+
+      <div class="panel-block">
+        <label for="editor">Algorithm (one instruction per line)</label>
+        <textarea id="editor" spellcheck="false" aria-label="Algorithm editor"></textarea>
+        <div class="footer-note">Example commands: <code>MOVE</code>, <code>TURN LEFT</code>, <code>TURN RIGHT</code>, <code>PICK TREASURE</code>, <code>REPEAT 3 TIMES</code>, <code>IF PATH AHEAD CLEAR THEN</code>, <code>ELSE</code>, <code>ENDIF</code>, <code>WHILE NOT ON TREASURE DO</code>, <code>ENDWHILE</code></div>
+        <div class="help" style="margin-top:6px">Conditions you can test: <code>PATH AHEAD CLEAR</code>, <code>PATH AHEAD BLOCKED</code>, <code>ON TREASURE</code>. Prefix with <code>NOT</code> to invert.</div>
+      </div>
+
+      <div class="practice-panel">
+        <div class="panel-block">
+          <div class="conf">
+            <div style="min-width:110px">
+              <label>Speed</label>
+              <input id="speed" type="range" min="150" max="1000" value="450" />
+              <div class="small">ms per step</div>
+            </div>
+            <div style="flex:1">
+              <label>Grid size</label>
+              <select id="gridSize">
+                <option value="5">5 × 5</option>
+                <option value="6" selected>6 × 6</option>
+                <option value="7">7 × 7</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-block">
+          <label>Map builder (teacher)</label>
+          <div class="button-stack">
+            <button id="placeObstacle" class="ghost">Place obstacle</button>
+            <button id="placeTreasure" class="ghost">Place treasure</button>
+            <button id="placeStart" class="ghost">Place start</button>
+            <button id="clearMap" class="ghost">Clear obstacles</button>
+          </div>
+          <div class="help" style="margin-top:8px">
+            Click cells on the map to place obstacles/treasure/start. Default: start=A1 (top-left), treasure=C4, a few obstacles preset.
+          </div>
+        </div>
+
+      </div>
+
+      <div class="challenge-box panel-block">
+        <div class="help">
+          One shared algorithm. Four fixed levels. Enter your name above and hit Start Challenge to run the exact same program across all maps. Results appear in the Hall of Fame below the board.
+        </div>
+        <button id="challengeBtn" class="warn" style="width:100%">Start Challenge (4 maps)</button>
+        <div>
+          <label>Challenge levels</label>
+          <ul id="challengeLevelList" class="level-list"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card board-wrap">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+          <div>
+            <strong>Map</strong>
+            <div class="small" style="margin-top:6px">Orientation: ▲ Up ▲ ▶ Right ▼ Down ◀ Left</div>
+          </div>
+          <div class="meta">
+            <div class="small">Avatar orientation: <span id="orientText">UP</span></div>
+            <div class="small">Treasure at: <span id="treasurePos">-</span></div>
+            <div class="small">Start at: <span id="startPos">-</span></div>
+          </div>
+        </div>
+        <div id="gridContainer" class="grid"></div>
+        <div class="board-actions">
+          <button id="hintBtn" class="ghost">Show Hint (shortest steps)</button>
+          <button id="shuffleBtn" class="ghost">Randomize</button>
+          <div class="spacer"></div>
+          <div class="small">Teacher tip: mix REPEAT / WHILE loops with IF / ELSE checks for smarter routes.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div id="runPanel" class="panel-card">
+          <h3 style="margin:0 0 10px;font-size:16px;text-transform:uppercase;letter-spacing:0.05em">Session Control</h3>
+          <div class="controls">
+            <button id="runBtn">Run ▶</button>
+            <button id="stepBtn">Step ⭢</button>
+            <button id="pauseBtn" class="ghost" disabled>Pause ❚❚</button>
+            <button id="resetBtn" class="ghost">Reset ⟲</button>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:space-between;font-size:13px;font-weight:600">
+            <span>Steps used: <strong id="stepsCount">0</strong></span>
+            <span>Status: <span id="statusText" class="status" style="display:inline-block">idle</span></span>
+          </div>
+        </div>
+        <div>
+          <label>Run log</label>
+          <div class="log" id="log"></div>
+        </div>
+        <div id="hallOfFamePanel">
+          <h3>Hall of Fame</h3>
+          <div id="hallOfFameEmpty" class="help small" style="margin:0">Be the first to complete all challenge maps!</div>
+          <ol id="hallOfFameList" class="hof-list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="credits">Brought to life with a lot of heart by <a href="https://atlverse.xyz" target="_blank" rel="noreferrer noopener">ATLverse</a>.</div>
+
+  <script>
+    /***********************
+     * Treasure Map Game
+     * Single-file implementation for classroom use.
+     * Commands supported:
+     *   MOVE
+     *   TURN LEFT
+     *   TURN RIGHT
+     *   PICK TREASURE
+     *   REPEAT n TIMES ... ENDREPEAT
+     *   IF condition THEN ... ELSE ... ENDIF
+     *   WHILE condition DO ... ENDWHILE
+     ***********************/
+
+    // === Config & state ===
+    const ACTION_COMMANDS = new Set(['MOVE','TURN LEFT','TURN RIGHT','PICK TREASURE']);
+    const CONDITION_MAP = {
+      'PATH AHEAD CLEAR': {key:'PATH_AHEAD_CLEAR', label:'PATH AHEAD CLEAR', defaultNegated:false},
+      'PATH AHEAD BLOCKED': {key:'PATH_AHEAD_CLEAR', label:'PATH AHEAD BLOCKED', defaultNegated:true},
+      'ON TREASURE': {key:'ON_TREASURE', label:'ON TREASURE', defaultNegated:false}
+    };
+    const HALL_OF_FAME_KEY = 'treasure-hof';
+    const PLAYER_NAME_KEY = 'treasure-player-name';
+    const challengeLevels = [
+      {
+        id:1,
+        name:'Harbor Turn',
+        gridSize:6,
+        start:{r:0,c:0,dir:0},
+        treasure:{r:2,c:3},
+        obstacles:[[1,2],[1,3],[2,1],[3,3],[4,2]]
+      },
+      {
+        id:2,
+        name:'Canyon Run',
+        gridSize:6,
+        start:{r:0,c:0,dir:0},
+        treasure:{r:4,c:4},
+        obstacles:[[0,3],[1,1],[1,4],[2,2],[3,3],[4,1],[4,2]]
+      },
+      {
+        id:3,
+        name:'Spiral Isles',
+        gridSize:7,
+        start:{r:0,c:0,dir:0},
+        treasure:{r:5,c:5},
+        obstacles:[[0,2],[1,2],[2,2],[2,3],[2,4],[3,4],[4,4],[4,3],[4,2],[4,1],[5,1],[5,2]]
+      },
+      {
+        id:4,
+        name:'Twin Bridges',
+        gridSize:6,
+        start:{r:0,c:0,dir:0},
+        treasure:{r:5,c:5},
+        obstacles:[[0,1],[1,1],[2,1],[3,1],[3,2],[3,3],[2,3],[1,3],[1,4],[2,5],[3,5],[4,5],[4,4],[4,3],[5,1],[5,2]]
+      }
+    ];
+    let hallOfFame = [];
+    let challengeState = null;
+    let runCompletionCallback = null;
+    let treasureCollected = false;
+    let currentMode = 'practice';
+    let practiceSnapshot = null;
+    let gridSize = 6;
+    let cells = []; // 2D array of cells
+    let obstacles = new Set();
+    let startPos = {r:0,c:0};
+    let treasurePos = {r:2,c:3};
+    let avatar = {r: startPos.r, c: startPos.c, dir: 0}; // dir: 0=up,1=right,2=down,3=left
+    let running = false;
+    let paused = false;
+
+    // Execution state
+    let programAst = [];
+    let executionCursor = null;
+    let programSourceSnapshot = '';
+    let timer = null;
+    let stepDelay = 450;
+    let stepsUsed = 0;
+
+    // Mode for placing items
+    let placeMode = null; // "obstacle" | "treasure" | "start"
+
+    // DOM
+    const gridContainer = document.getElementById('gridContainer');
+    const editor = document.getElementById('editor');
+    const logEl = document.getElementById('log');
+    const practiceModeBtn = document.getElementById('practiceModeBtn');
+    const challengeModeBtn = document.getElementById('challengeModeBtn');
+    const playerNameInput = document.getElementById('playerName');
+    const runBtn = document.getElementById('runBtn');
+    const stepBtn = document.getElementById('stepBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const challengeBtn = document.getElementById('challengeBtn');
+    const speedEl = document.getElementById('speed');
+    const stepsCount = document.getElementById('stepsCount');
+    const statusText = document.getElementById('statusText');
+    const orientText = document.getElementById('orientText');
+    const treasurePosEl = document.getElementById('treasurePos');
+    const startPosEl = document.getElementById('startPos');
+    const placeObstacleBtn = document.getElementById('placeObstacle');
+    const placeStartBtn = document.getElementById('placeStart');
+    const placeTreasureBtn = document.getElementById('placeTreasure');
+    const clearMapBtn = document.getElementById('clearMap');
+    const gridSizeSelect = document.getElementById('gridSize');
+    const hintBtn = document.getElementById('hintBtn');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+    const hallOfFameList = document.getElementById('hallOfFameList');
+    const hallOfFameEmpty = document.getElementById('hallOfFameEmpty');
+    const challengeLevelList = document.getElementById('challengeLevelList');
+
+    // Helper utils
+    function coordId(r,c){ return `r${r}c${c}` }
+    function inBounds(r,c){ return r>=0 && r<gridSize && c>=0 && c<gridSize }
+    function ensureGridOption(size){
+      if([...gridSizeSelect.options].some(opt => parseInt(opt.value,10)===size)) return;
+      const opt = document.createElement('option');
+      opt.value = size;
+      opt.textContent = `${size} × ${size}`;
+      gridSizeSelect.appendChild(opt);
+    }
+    function captureCurrentMap(){
+      return {
+        gridSize,
+        start:{...startPos},
+        treasure:{...treasurePos},
+        avatar:{...avatar},
+        obstacles:Array.from(obstacles)
+      };
+    }
+    function restoreMap(snapshot){
+      if(!snapshot) return;
+      ensureGridOption(snapshot.gridSize);
+      gridSize = snapshot.gridSize;
+      gridSizeSelect.value = String(gridSize);
+      startPos = {...snapshot.start};
+      treasurePos = {...snapshot.treasure};
+      avatar = {...snapshot.avatar};
+      obstacles = new Set(snapshot.obstacles);
+      createGrid();
+      drawMap();
+    }
+    function applyChallengeLevel(level){
+      ensureGridOption(level.gridSize);
+      gridSize = level.gridSize;
+      gridSizeSelect.value = String(level.gridSize);
+      startPos = {r: level.start.r, c: level.start.c};
+      treasurePos = {r: level.treasure.r, c: level.treasure.c};
+      avatar = {r:startPos.r, c:startPos.c, dir: level.start.dir ?? 0};
+      obstacles = new Set(level.obstacles.map(([r,c])=>coordId(r,c)));
+      createGrid();
+      drawMap();
+    }
+    function setChallengeUiState(active){
+      if(active){
+        const controls = [runBtn, stepBtn, hintBtn, shuffleBtn, gridSizeSelect, placeObstacleBtn, placeTreasureBtn, placeStartBtn, clearMapBtn];
+        controls.forEach(btn=>{ if(btn) btn.disabled = true; });
+      } else {
+        updateModeUI();
+      }
+      challengeBtn.disabled = active;
+      editor.readOnly = !!active;
+    }
+    function renderChallengeLevels(){
+      if(!challengeLevelList) return;
+      challengeLevelList.innerHTML = '';
+      challengeLevels.forEach((lvl,i)=>{
+        const li = document.createElement('li');
+        li.innerHTML = `<span>Level ${i+1}: ${lvl.name}</span><span>${lvl.gridSize}×${lvl.gridSize}</span>`;
+        challengeLevelList.appendChild(li);
+      });
+    }
+    function updateModeUI(){
+      const isChallenge = currentMode==='challenge';
+      document.body.classList.toggle('mode-challenge', isChallenge);
+      practiceModeBtn.classList.toggle('active', !isChallenge);
+      challengeModeBtn.classList.toggle('active', isChallenge);
+      if(!challengeState){
+        const practiseControls = [runBtn, stepBtn, hintBtn, shuffleBtn, gridSizeSelect, placeObstacleBtn, placeTreasureBtn, placeStartBtn, clearMapBtn];
+        practiseControls.forEach(btn=>{
+          if(!btn) return;
+          btn.disabled = isChallenge ? true : false;
+        });
+        pauseBtn.disabled = isChallenge ? true : pauseBtn.disabled;
+        editor.readOnly = false;
+      }
+    }
+    function setMode(mode){
+      if(mode===currentMode) return;
+      if(running){
+        log('Stop the current run before switching modes.');
+        return;
+      }
+      if(challengeState){
+        log('Finish the current challenge before switching modes.');
+        return;
+      }
+      if(mode==='challenge'){
+        placeMode = null;
+        if(!practiceSnapshot){
+          practiceSnapshot = captureCurrentMap();
+        }
+        applyChallengeLevel(challengeLevels[0]);
+        log('Challenge maps loaded. Review the course list and press Start Challenge when ready.');
+      } else {
+        if(practiceSnapshot){
+          restoreMap(practiceSnapshot);
+          practiceSnapshot = null;
+        }
+      }
+      currentMode = mode;
+      updateModeUI();
+    }
+    function loadHallOfFame(){
+      try{
+        const stored = localStorage.getItem(HALL_OF_FAME_KEY);
+        hallOfFame = stored ? JSON.parse(stored) : [];
+      } catch{
+        hallOfFame = [];
+      }
+      renderHallOfFame();
+    }
+    function saveHallOfFame(){
+      localStorage.setItem(HALL_OF_FAME_KEY, JSON.stringify(hallOfFame));
+    }
+    function renderHallOfFame(){
+      if(!hallOfFameList) return;
+      hallOfFameList.innerHTML = '';
+      if(!hallOfFame.length){
+        hallOfFameEmpty.style.display = 'block';
+        return;
+      }
+      hallOfFameEmpty.style.display = 'none';
+      hallOfFame.slice(0,8).forEach((entry,idx)=>{
+        const li = document.createElement('li');
+        li.innerHTML = `<span>#${idx+1} ${escapeHtml(entry.name)}</span><small>${entry.steps} steps</small>`;
+        hallOfFameList.appendChild(li);
+      });
+    }
+    function getPlayerName(){
+      return playerNameInput.value.trim();
+    }
+    function ensurePlayerName(){
+      const name = getPlayerName();
+      if(!name){
+        log('Enter your name to play and record scores.');
+        playerNameInput.classList.add('input-error');
+        playerNameInput.focus();
+        return null;
+      }
+      playerNameInput.classList.remove('input-error');
+      localStorage.setItem(PLAYER_NAME_KEY, name);
+      return name;
+    }
+
+    // Render grid
+    function createGrid(){
+      gridContainer.innerHTML = '';
+      gridContainer.style.gridTemplateColumns = `repeat(${gridSize}, 56px)`;
+      gridContainer.style.gridTemplateRows = `repeat(${gridSize}, 56px)`;
+      cells = [];
+      for(let r=0;r<gridSize;r++){
+        let row=[];
+        for(let c=0;c<gridSize;c++){
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.id = coordId(r,c);
+          cell.dataset.r = r;
+          cell.dataset.c = c;
+          const coordLabel = document.createElement('div');
+          coordLabel.className = 'coord';
+          // show coordinates like A1, B2 (A=col0, 1=row1)
+          const colLetter = String.fromCharCode(65+c);
+          coordLabel.textContent = `${colLetter}${r+1}`;
+          cell.appendChild(coordLabel);
+
+          cell.addEventListener('click', onCellClick);
+          gridContainer.appendChild(cell);
+          row.push(cell);
+        }
+        cells.push(row);
+      }
+    }
+
+    function drawMap(){
+      for(let r=0;r<gridSize;r++){
+        for(let c=0;c<gridSize;c++){
+          const el = cells[r][c];
+          el.classList.remove('obstacle','start','treasure');
+          el.innerHTML = ''; // reset
+          const coordLabel = document.createElement('div');
+          coordLabel.className = 'coord';
+          const colLetter = String.fromCharCode(65+c);
+          coordLabel.textContent = `${colLetter}${r+1}`;
+          el.appendChild(coordLabel);
+
+          // obstacle
+          if(obstacles.has(coordId(r,c))){
+            el.classList.add('obstacle');
+            const ic = document.createElement('div');
+            ic.style.fontSize='12px';
+            ic.textContent='⛰';
+            el.appendChild(ic);
+            continue; // don't put avatar on obstacle visually
+          }
+
+          // treasure
+          if(treasurePos.r===r && treasurePos.c===c){
+            el.classList.add('treasure');
+            const t = document.createElement('div');
+            t.textContent = '💰';
+            t.style.fontSize='20px';
+            el.appendChild(t);
+          }
+
+          // start mark
+          if(startPos.r===r && startPos.c===c){
+            el.classList.add('start');
+            const s = document.createElement('div');
+            s.textContent = 'S';
+            s.style.position='absolute';
+            s.style.left='6px';
+            s.style.bottom='6px';
+            s.style.fontSize='11px';
+            s.style.opacity = 0.9;
+            el.appendChild(s);
+          }
+
+          // avatar
+          if(avatar.r===r && avatar.c===c){
+            const av = document.createElement('div');
+            av.className = 'avatar';
+            const dirs = ['▲','▶','▼','◀'];
+            av.textContent = dirs[avatar.dir];
+            el.appendChild(av);
+          }
+        }
+      }
+      updateMeta();
+    }
+
+    function updateMeta(){
+      orientText.textContent = ['UP','RIGHT','DOWN','LEFT'][avatar.dir];
+      treasurePosEl.textContent = `${String.fromCharCode(65+treasurePos.c)}${treasurePos.r+1}`;
+      startPosEl.textContent = `${String.fromCharCode(65+startPos.c)}${startPos.r+1}`;
+      stepsCount.textContent = stepsUsed;
+    }
+
+    // Editor default example
+    function loadDefaultProgram(){
+      editor.value = `TURN RIGHT
+REPEAT 3 TIMES
+MOVE
+ENDREPEAT
+TURN RIGHT
+WHILE PATH AHEAD CLEAR DO
+MOVE
+ENDWHILE
+IF ON TREASURE THEN
+PICK TREASURE
+ELSE
+TURN LEFT
+PICK TREASURE
+ENDIF`;
+    }
+
+    // Parsing program with support for REPEAT, IF/ELSE, and WHILE blocks
+    function parseProgram(text){
+      const lines = text.split(/\r?\n/);
+      let idx = 0;
+
+      function parseCondition(fragment, lineNumber){
+        if(!fragment || !fragment.trim()){
+          throw new Error(`Missing condition on line ${lineNumber}.`);
+        }
+        let normalized = fragment.trim().replace(/\s+/g,' ');
+        let inverted = false;
+        if(/^NOT\s+/i.test(normalized)){
+          inverted = true;
+          normalized = normalized.replace(/^NOT\s+/i,'').trim();
+        }
+        const lookup = CONDITION_MAP[normalized.toUpperCase()];
+        if(!lookup){
+          const available = Object.keys(CONDITION_MAP).join(', ');
+          throw new Error(`Unknown condition "${fragment.trim()}" on line ${lineNumber}. Try: ${available}.`);
+        }
+        const negated = inverted ? !lookup.defaultNegated : lookup.defaultNegated;
+        const label = (inverted ? 'NOT ' : '') + lookup.label;
+        return {key: lookup.key, negated, label};
+      }
+
+      function parseBlock(endTokens = []){
+        const out = [];
+        while(idx < lines.length){
+          const rawLine = lines[idx];
+          const lineNumber = idx + 1;
+          idx++;
+          const raw = rawLine.trim();
+          if(raw.length===0) continue;
+          const up = raw.toUpperCase();
+          if(endTokens.includes(up)){
+            return {body: out, terminator: up};
+          }
+          if(up.startsWith('REPEAT')){
+            const m = up.match(/^REPEAT\s+(\d+)\s+TIMES$/);
+            if(!m) throw new Error(`Syntax error on line ${lineNumber}: REPEAT must be "REPEAT n TIMES"`);
+            const times = parseInt(m[1],10);
+            const inner = parseBlock(['ENDREPEAT']);
+            out.push({type:'REPEAT', times, body: inner.body});
+            continue;
+          }
+          if(up.startsWith('IF ')){
+            const m = raw.match(/^IF\s+(.+?)(?:\s+THEN)?$/i);
+            if(!m) throw new Error(`Syntax error on line ${lineNumber}: IF must look like "IF condition THEN"`);
+            const condition = parseCondition(m[1], lineNumber);
+            const thenBlock = parseBlock(['ELSE','ENDIF']);
+            let elseBody = [];
+            if(thenBlock.terminator === 'ELSE'){
+              elseBody = parseBlock(['ENDIF']).body;
+            }
+            out.push({type:'IF', condition, thenBody: thenBlock.body, elseBody});
+            continue;
+          }
+          if(up.startsWith('WHILE ')){
+            const m = raw.match(/^WHILE\s+(.+?)(?:\s+DO)?$/i);
+            if(!m) throw new Error(`Syntax error on line ${lineNumber}: WHILE must look like "WHILE condition DO"`);
+            const condition = parseCondition(m[1], lineNumber);
+            const loopBody = parseBlock(['ENDWHILE']);
+            out.push({type:'WHILE', condition, body: loopBody.body});
+            continue;
+          }
+          if(ACTION_COMMANDS.has(up)){
+            out.push({type:'ACTION', cmd: up});
+            continue;
+          }
+          throw new Error(`Unknown command on line ${lineNumber}: "${raw}"`);
+        }
+        if(endTokens.length){
+          const expected = endTokens[endTokens.length-1];
+          throw new Error(`Missing ${expected} before end of program.`);
+        }
+        return {body: out, terminator: null};
+      }
+
+      return parseBlock().body;
+    }
+
+    function createExecutionCursor(ast){
+      return {
+        stack: [{kind:'BLOCK', nodes: ast, index:0}],
+        next(){
+          while(this.stack.length){
+            const frame = this.stack[this.stack.length - 1];
+            if(frame.index >= frame.nodes.length){
+              if(frame.kind === 'REPEAT'){
+                frame.remaining--;
+                if(frame.remaining > 0){
+                  frame.index = 0;
+                  continue;
+                }
+              } else if(frame.kind === 'WHILE'){
+                if(evaluateCondition(frame.condition, 'WHILE')){
+                  frame.index = 0;
+                  continue;
+                }
+              }
+              this.stack.pop();
+              continue;
+            }
+            const node = frame.nodes[frame.index];
+            if(node.type === 'ACTION'){
+              frame.index++;
+              return {cmd: node.cmd};
+            }
+            if(node.type === 'REPEAT'){
+              frame.index++;
+              if(node.times <= 0) continue;
+              this.stack.push({kind:'REPEAT', nodes: node.body, index:0, remaining: node.times});
+              continue;
+            }
+            if(node.type === 'IF'){
+              frame.index++;
+              const shouldRunThen = evaluateCondition(node.condition, 'IF');
+              const branch = shouldRunThen ? node.thenBody : node.elseBody;
+              if(branch.length){
+                this.stack.push({kind:'BLOCK', nodes: branch, index:0});
+              }
+              continue;
+            }
+            if(node.type === 'WHILE'){
+              frame.index++;
+              if(evaluateCondition(node.condition, 'WHILE')){
+                this.stack.push({kind:'WHILE', nodes: node.body, index:0, condition: node.condition});
+              }
+              continue;
+            }
+            frame.index++;
+          }
+          return null;
+        }
+      };
+    }
+
+    function getForwardCell(){
+      let nr = avatar.r;
+      let nc = avatar.c;
+      if(avatar.dir===0) nr--;
+      else if(avatar.dir===1) nc++;
+      else if(avatar.dir===2) nr++;
+      else if(avatar.dir===3) nc--;
+      return {r:nr, c:nc};
+    }
+
+    function canMoveForward(){
+      const next = getForwardCell();
+      if(!inBounds(next.r,next.c)) return false;
+      if(obstacles.has(coordId(next.r,next.c))) return false;
+      return true;
+    }
+
+    function evaluateCondition(condition, contextLabel){
+      let value;
+      if(condition.key === 'PATH_AHEAD_CLEAR'){
+        value = canMoveForward();
+      } else if(condition.key === 'ON_TREASURE'){
+        value = avatar.r===treasurePos.r && avatar.c===treasurePos.c;
+      } else {
+        value = false;
+      }
+      if(condition.negated){
+        value = !value;
+      }
+      if(contextLabel){
+        log(`[${contextLabel}] ${condition.label} → ${value ? 'true' : 'false'}`);
+      }
+      return value;
+    }
+
+    // Execution
+    function executeNext(){
+      if(!executionCursor){
+        finishRun('completed');
+        return;
+      }
+      const nextInstruction = executionCursor.next();
+      if(!nextInstruction){
+        finishRun('completed');
+        return;
+      }
+      stepsUsed++;
+      stepsCount.textContent = stepsUsed;
+      log(`→ ${nextInstruction.cmd}`);
+      try {
+        interpret(nextInstruction.cmd);
+      } catch(err){
+        statusText.textContent = 'error';
+        statusText.classList.add('error');
+        log(`ERROR: ${err.message}`);
+        finishRun('error', err);
+        return;
+      }
+      afterCommand();
+    }
+
+    function finishRun(reason, error){
+      const callback = runCompletionCallback;
+      runCompletionCallback = null;
+      stopExecution();
+      if(reason==='completed'){
+        log('Program finished.');
+      }
+      if(callback){
+        callback({reason, error, treasureCollected, steps: stepsUsed});
+      }
+    }
+
+    function interpret(cmd){
+      if(cmd==='MOVE'){
+        const next = getForwardCell();
+        if(!inBounds(next.r,next.c)) throw new Error('Move would go off the map.');
+        if(obstacles.has(coordId(next.r,next.c))) throw new Error('Move would hit an obstacle.');
+        avatar.r = next.r;
+        avatar.c = next.c;
+      } else if(cmd==='TURN LEFT'){
+        avatar.dir = (avatar.dir + 3) % 4;
+      } else if(cmd==='TURN RIGHT'){
+        avatar.dir = (avatar.dir + 1) % 4;
+      } else if(cmd==='PICK TREASURE'){
+        if(avatar.r===treasurePos.r && avatar.c===treasurePos.c){
+          log('🎉 Treasure picked! Well done.');
+          treasureCollected = true;
+          statusText.textContent = 'success';
+          statusText.classList.remove('error');
+          statusText.classList.add('success');
+        } else {
+          throw new Error('No treasure at current position to pick.');
+        }
+      } else {
+        throw new Error(`Unknown runtime command: ${cmd}`);
+      }
+    }
+
+    function afterCommand(){
+      drawMap();
+      if(avatar.r===treasurePos.r && avatar.c===treasurePos.c){
+      log('Avatar is on treasure cell. Use PICK TREASURE to pick it up.');
+      }
+    }
+
+    function startChallengeRun(){
+      if(running){
+        log('Finish or reset the current run before starting the challenge.');
+        return;
+      }
+      if(currentMode!=='challenge'){
+        log('Switch to Challenge mode to start the multi-map run.');
+        return;
+      }
+      const name = ensurePlayerName();
+      if(!name) return;
+      let ast;
+      try{
+        ast = parseProgram(editor.value);
+      } catch(err){
+        log(`Parse error: ${err.message}`);
+        statusText.textContent = 'error';
+        statusText.classList.add('error');
+        return;
+      }
+      challengeState = {
+        name,
+        ast,
+        source: editor.value,
+        levelIndex:0,
+        totalSteps:0,
+        perLevel:[]
+      };
+      placeMode = null;
+      setChallengeUiState(true);
+      log(`Challenge started for ${name}. Your algorithm will run on all maps without edits.`);
+      runChallengeLevel();
+    }
+
+    function runChallengeLevel(){
+      if(!challengeState) return;
+      const level = challengeLevels[challengeState.levelIndex];
+      applyChallengeLevel(level);
+      log(`Level ${challengeState.levelIndex+1}: ${level.name} (${level.gridSize}×${level.gridSize})`);
+      beginExecution(challengeState.ast, challengeState.source, {
+        onComplete: handleChallengeLevelComplete,
+        logMessage: `Running challenge level ${challengeState.levelIndex+1}...`
+      });
+    }
+
+    function handleChallengeLevelComplete(result){
+      if(!challengeState) return;
+      if(result.reason !== 'completed'){
+        log('Challenge failed: program error or was stopped.');
+        finishChallenge('fail');
+        return;
+      }
+      if(!result.treasureCollected){
+        log('Challenge failed: treasure was not picked up on this level.');
+        finishChallenge('fail');
+        return;
+      }
+      const levelName = challengeLevels[challengeState.levelIndex].name;
+      log(`✅ Completed ${levelName} in ${result.steps} steps.`);
+      challengeState.totalSteps += result.steps;
+      challengeState.perLevel.push({name: levelName, steps: result.steps});
+      challengeState.levelIndex++;
+      if(challengeState.levelIndex >= challengeLevels.length){
+        finishChallenge('success');
+      } else {
+        setTimeout(runChallengeLevel, 800);
+      }
+    }
+
+    function finishChallenge(status){
+      if(!challengeState) return;
+      setChallengeUiState(false);
+      if(status==='success'){
+        log(`🏆 Challenge complete! Total steps: ${challengeState.totalSteps}`);
+        hallOfFame.push({name: challengeState.name, steps: challengeState.totalSteps, ts: Date.now()});
+        hallOfFame.sort((a,b)=>a.steps - b.steps || a.ts - b.ts);
+        hallOfFame = hallOfFame.slice(0,10);
+        saveHallOfFame();
+        renderHallOfFame();
+      } else if(status==='fail'){
+        log('Challenge over — refine your algorithm and try again.');
+      } else {
+        log('Challenge cancelled.');
+      }
+      challengeState = null;
+      if(currentMode==='challenge'){
+        applyChallengeLevel(challengeLevels[0]);
+      } else if(practiceSnapshot){
+        restoreMap(practiceSnapshot);
+      }
+    }
+
+    function configureTimer(){
+      if(timer){
+        clearInterval(timer);
+        timer = null;
+      }
+      if(!running) return;
+      const delay = parseInt(speedEl.value,10) || stepDelay;
+      timer = setInterval(()=>{
+        if(paused) return;
+        executeNext();
+      }, delay);
+    }
+
+    function beginExecution(ast, sourceSnapshot, options={}){
+      programAst = ast;
+      programSourceSnapshot = sourceSnapshot;
+      executionCursor = createExecutionCursor(programAst);
+      running = true;
+      paused = false;
+      runBtn.disabled = true;
+      stepBtn.disabled = true;
+      pauseBtn.disabled = false;
+      pauseBtn.classList.remove('ghost');
+      statusText.textContent = 'running';
+      statusText.classList.remove('success','error');
+      stepsUsed = 0;
+      stepsCount.textContent = stepsUsed;
+      treasureCollected = false;
+      runCompletionCallback = options.onComplete || null;
+      configureTimer();
+      log(options.logMessage || 'Program started.');
+    }
+
+    function runProgram(){
+      if(running) return;
+      if(challengeState){
+        log('Finish the challenge before starting manual runs.');
+        return;
+      }
+      if(currentMode==='challenge'){
+        log('Challenge mode is active. Use Start Challenge to run your program on all maps.');
+        return;
+      }
+      try {
+        programAst = parseProgram(editor.value);
+      } catch(err){
+        log(`Parse error: ${err.message}`);
+        statusText.textContent = 'error';
+        statusText.classList.add('error');
+        return;
+      }
+      beginExecution(programAst, editor.value);
+    }
+
+    function stepOnce(){
+      if(running) return; // prevent stepping while running animated
+      if(challengeState){
+        log('Step mode is disabled during the challenge.');
+        return;
+      }
+      if(currentMode==='challenge'){
+        log('Challenge mode is active. Use Start Challenge or switch back to Practice.');
+        return;
+      }
+      const sourceChanged = programSourceSnapshot !== editor.value;
+      if(!executionCursor || sourceChanged){
+        try {
+          programAst = parseProgram(editor.value);
+        } catch(err){
+          log(`Parse error: ${err.message}`);
+          statusText.textContent = 'error';
+          statusText.classList.add('error');
+          return;
+        }
+        programSourceSnapshot = editor.value;
+        executionCursor = createExecutionCursor(programAst);
+        stepsUsed = 0;
+        stepsCount.textContent = stepsUsed;
+        treasureCollected = false;
+      }
+      running = false;
+      paused = true;
+      if(!executionCursor){
+        log('Program finished.');
+        return;
+      }
+      const nextInstruction = executionCursor.next();
+      if(!nextInstruction){
+        log('Program finished.');
+        executionCursor = null;
+        return;
+      }
+      stepsUsed++;
+      stepsCount.textContent = stepsUsed;
+      log(`→ ${nextInstruction.cmd}`);
+      try {
+        interpret(nextInstruction.cmd);
+        afterCommand();
+      } catch(err){
+        statusText.textContent = 'error';
+        statusText.classList.add('error');
+        log(`ERROR: ${err.message}`);
+        executionCursor = null;
+      }
+    }
+
+    function pauseExecution(){
+      paused = !paused;
+      if(paused){
+        pauseBtn.textContent = 'Resume ▶';
+        statusText.textContent = 'paused';
+      } else {
+        pauseBtn.textContent = 'Pause ❚❚';
+        statusText.textContent = 'running';
+      }
+    }
+
+    function stopExecution(){
+      running = false;
+      paused = false;
+      if(timer) clearInterval(timer);
+      timer = null;
+      executionCursor = null;
+      if(challengeState || currentMode==='challenge'){
+        runBtn.disabled = true;
+        stepBtn.disabled = true;
+      } else {
+        runBtn.disabled = false;
+        stepBtn.disabled = false;
+      }
+      pauseBtn.disabled = true;
+      pauseBtn.classList.add('ghost');
+      pauseBtn.textContent = 'Pause ❚❚';
+      statusText.classList.remove('error');
+      if(statusText.textContent !== 'success') statusText.textContent = 'idle';
+    }
+
+    function resetGame(){
+      if(runCompletionCallback){
+        const cb = runCompletionCallback;
+        runCompletionCallback = null;
+        cb({reason:'aborted', error:null, treasureCollected:false, steps: stepsUsed});
+      }
+      stopExecution();
+      avatar.r = startPos.r;
+      avatar.c = startPos.c;
+      avatar.dir = 0;
+      programAst = [];
+      executionCursor = null;
+      programSourceSnapshot = '';
+      stepsUsed = 0;
+      stepsCount.textContent = stepsUsed;
+      statusText.textContent = 'idle';
+      statusText.classList.remove('success','error');
+      log('Reset game.');
+      drawMap();
+      if(challengeState){
+        finishChallenge('abort');
+      }
+    }
+
+    // Logging
+    function log(msg){
+      const now = new Date();
+      const t = now.toLocaleTimeString();
+      logEl.innerHTML += `<div>[${t}] ${escapeHtml(msg)}</div>`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+    // Cell click actions (placing obstacles / treasure / start)
+    function onCellClick(e){
+      if(challengeState || currentMode==='challenge') return;
+      const r = parseInt(this.dataset.r,10);
+      const c = parseInt(this.dataset.c,10);
+      if(placeMode==='obstacle'){
+        const id = coordId(r,c);
+        if(obstacles.has(id)){
+          obstacles.delete(id);
+          log(`Removed obstacle at ${String.fromCharCode(65+c)}${r+1}`);
+        } else {
+          // don't allow obstacle on start or treasure
+          if(r===startPos.r && c===startPos.c){ log('Cannot place obstacle on start'); return; }
+          if(r===treasurePos.r && c===treasurePos.c){ log('Cannot place obstacle on treasure'); return; }
+          obstacles.add(id);
+          log(`Placed obstacle at ${String.fromCharCode(65+c)}${r+1}`);
+        }
+        drawMap();
+        return;
+      }
+      if(placeMode==='treasure'){
+        const prev = `${String.fromCharCode(65+treasurePos.c)}${treasurePos.r+1}`;
+        treasurePos = {r,c};
+        log(`Moved treasure from ${prev} to ${String.fromCharCode(65+c)}${r+1}`);
+        drawMap();
+        return;
+      }
+      if(placeMode==='start'){
+        const prev = `${String.fromCharCode(65+startPos.c)}${startPos.r+1}`;
+        startPos = {r,c};
+        avatar.r = r; avatar.c = c; avatar.dir = 0;
+        log(`Moved start from ${prev} to ${String.fromCharCode(65+c)}${r+1}`);
+        drawMap();
+        return;
+      }
+      // default: clicking cell shows its coordinate
+      log(`Cell clicked: ${String.fromCharCode(65+c)}${r+1}`);
+    }
+
+    // small helper: compute Manhattan shortest steps (hint)
+    function shortestSteps(){
+      // naive BFS for shortest path ignoring orientation, but avoiding obstacles
+      const start = {r: avatar.r, c: avatar.c};
+      const target = {r: treasurePos.r, c: treasurePos.c};
+      const q = [start];
+      const key = (p)=>`${p.r},${p.c}`;
+      const prev = {};
+      const visited = new Set([key(start)]);
+      let found = false;
+      while(q.length){
+        const cur = q.shift();
+        if(cur.r===target.r && cur.c===target.c){ found = true; break; }
+        const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+        for(const d of dirs){
+          const nr = cur.r + d[0], nc = cur.c + d[1];
+          if(!inBounds(nr,nc)) continue;
+          if(obstacles.has(coordId(nr,nc))) continue;
+          const k = `${nr},${nc}`;
+          if(visited.has(k)) continue;
+          visited.add(k);
+          prev[k] = `${cur.r},${cur.c}`;
+          q.push({r:nr,c:nc});
+        }
+      }
+      if(!found) return null;
+      // reconstruct
+      let curKey = `${target.r},${target.c}`;
+      let steps=0;
+      while(curKey !== `${start.r},${start.c}`){
+        curKey = prev[curKey];
+        steps++;
+      }
+      return steps;
+    }
+
+    // shuffle: randomize treasure and some obstacles
+    function randomizeMap(){
+      if(challengeState || currentMode==='challenge'){
+        log('Cannot randomize map during Challenge mode.');
+        return;
+      }
+      obstacles.clear();
+      const countObstacles = Math.floor(gridSize * 1.2);
+      while(obstacles.size < countObstacles){
+        const r = Math.floor(Math.random()*gridSize);
+        const c = Math.floor(Math.random()*gridSize);
+        const id = coordId(r,c);
+        if(id===coordId(startPos.r,startPos.c)) continue;
+        obstacles.add(id);
+      }
+      // place treasure randomly not on start or obstacle
+      while(true){
+        const r = Math.floor(Math.random()*gridSize);
+        const c = Math.floor(Math.random()*gridSize);
+        if(coordId(r,c)===coordId(startPos.r,startPos.c)) continue;
+        if(obstacles.has(coordId(r,c))) continue;
+        treasurePos = {r,c};
+        break;
+      }
+      drawMap();
+      log('Map randomized.');
+    }
+
+    // === Event wiring ===
+    practiceModeBtn.addEventListener('click', ()=>setMode('practice'));
+    challengeModeBtn.addEventListener('click', ()=>setMode('challenge'));
+    runBtn.addEventListener('click', runProgram);
+    stepBtn.addEventListener('click', stepOnce);
+    pauseBtn.addEventListener('click', pauseExecution);
+    resetBtn.addEventListener('click', resetGame);
+    challengeBtn.addEventListener('click', startChallengeRun);
+    playerNameInput.addEventListener('input', ()=>{
+      playerNameInput.classList.remove('input-error');
+      localStorage.setItem(PLAYER_NAME_KEY, playerNameInput.value.trim());
+    });
+    speedEl.addEventListener('input', ()=>{
+      if(!running) return;
+      configureTimer();
+    });
+    gridSizeSelect.addEventListener('change', (e)=>{
+      if(challengeState || currentMode==='challenge'){
+        e.target.value = gridSize;
+        log('Grid size is locked in Challenge mode.');
+        return;
+      }
+      gridSize = parseInt(e.target.value,10);
+      // reinitialize start/treasure for simpler reset
+      startPos = {r:0,c:0};
+      treasurePos = {r: Math.min(2,gridSize-1), c: Math.min(3,gridSize-1)};
+      obstacles.clear();
+      createGrid();
+      drawMap();
+      log(`Grid size changed to ${gridSize}x${gridSize}`);
+    });
+
+    placeObstacleBtn.addEventListener('click', ()=>{
+      placeMode = (placeMode==='obstacle'? null:'obstacle');
+      placeObstacleBtn.classList.toggle('ghost', placeMode!=='obstacle');
+      placeObstacleBtn.style.color = placeMode==='obstacle' ? 'var(--accent)': '';
+      log(placeMode ? 'Place obstacle: click cells' : 'Place obstacle mode turned off');
+    });
+    placeTreasureBtn.addEventListener('click', ()=>{
+      placeMode = (placeMode==='treasure'? null:'treasure');
+      placeTreasureBtn.classList.toggle('ghost', placeMode!=='treasure');
+      placeTreasureBtn.style.color = placeMode==='treasure' ? 'var(--accent)': '';
+      log(placeMode ? 'Place treasure: click a cell' : 'Place treasure mode turned off');
+    });
+    placeStartBtn.addEventListener('click', ()=>{
+      placeMode = (placeMode==='start'? null:'start');
+      placeStartBtn.classList.toggle('ghost', placeMode!=='start');
+      placeStartBtn.style.color = placeMode==='start' ? 'var(--accent)': '';
+      log(placeMode ? 'Place start: click a cell' : 'Place start mode turned off');
+    });
+    clearMapBtn.addEventListener('click', ()=>{
+      obstacles.clear();
+      drawMap();
+      log('Cleared obstacles.');
+    });
+    hintBtn.addEventListener('click', ()=>{
+      const s = shortestSteps();
+      if(s===null) log('No path to treasure (blocked).');
+      else log(`Hint: shortest number of MOVE steps (ignoring turns): ${s}`);
+    });
+    shuffleBtn.addEventListener('click', ()=>{
+      randomizeMap();
+    });
+
+    // Save/restore last editor content in session
+    window.addEventListener('beforeunload', ()=>{ sessionStorage.setItem('treasure-editor', editor.value); });
+    const saved = sessionStorage.getItem('treasure-editor');
+    createGrid();
+    if(saved) editor.value = saved; else loadDefaultProgram();
+    // default obstacles
+    obstacles.add(coordId(1,2));
+    obstacles.add(coordId(2,1));
+    obstacles.add(coordId(3,3));
+    // ensure treasure not on obstacle
+    if(obstacles.has(coordId(treasurePos.r,treasurePos.c))) {
+      treasurePos = {r: Math.min(2,gridSize-1), c: Math.min(3,gridSize-1)};
+    }
+    drawMap();
+    const storedName = localStorage.getItem(PLAYER_NAME_KEY);
+    if(storedName) playerNameInput.value = storedName;
+    renderChallengeLevels();
+    loadHallOfFame();
+    updateModeUI();
+
+    // keyboard shortcuts
+    document.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter' && (e.ctrlKey || e.metaKey)){ // Ctrl/Cmd+Enter -> run
+        runProgram();
+      }
+      if(e.key==='F8'){ stepOnce(); }
+    });
+
+    // initial info
+    log('Welcome to Treasure Map Adventure!');
+    log('Edit the algorithm and press Run or Step. Use REPEAT / WHILE loops and IF / ELSE to react to the map.');
+    log('Use the Practice / Challenge toggle to switch between sandbox play and the hall-of-fame run.');
+    log('Conditions available: PATH AHEAD CLEAR, PATH AHEAD BLOCKED, ON TREASURE (add NOT for the opposite).');
+    log('Ready for the hall of fame? Enter your name and hit Start Challenge to solve all maps with one algorithm.');
+    log('This playground is lovingly crafted by ATLverse — because clever ideas deserve playful arenas.');
+  </script>
+</body>
+</html>
