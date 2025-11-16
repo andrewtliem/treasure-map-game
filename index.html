@@ -377,7 +377,7 @@
         <label for="editor">Algorithm (one instruction per line)</label>
         <textarea id="editor" spellcheck="false" aria-label="Algorithm editor"></textarea>
         <div class="footer-note">Example commands: <code>MOVE</code>, <code>TURN LEFT</code>, <code>TURN RIGHT</code>, <code>JUMP</code>, <code>PICK TREASURE</code>, <code>REPEAT 3 TIMES</code>, <code>IF PATH AHEAD CLEAR THEN</code>, <code>ELSE</code>, <code>ENDIF</code>, <code>WHILE NOT ON TREASURE DO</code>, <code>ENDWHILE</code></div>
-        <div class="help" style="margin-top:6px">Conditions you can test: <code>PATH AHEAD CLEAR</code>, <code>PATH AHEAD BLOCKED</code>, <code>ON TREASURE</code>, <code>JUMP CLEAR</code>, <code>JUMP BLOCKED</code>. Prefix with <code>NOT</code> to invert. Need to hop over trouble? Use <code>JUMP</code> to leap straight ahead by one cell without changing direction.</div>
+        <div class="help" style="margin-top:6px">Conditions you can test: <code>PATH AHEAD CLEAR</code>, <code>PATH AHEAD BLOCKED</code>, <code>PATH AHEAD NOT VISITED</code>, <code>CELL NOT VISITED</code>, <code>AT EDGE</code>, <code>ON TREASURE</code>, <code>JUMP CLEAR</code>, <code>JUMP BLOCKED</code>. Prefix with <code>NOT</code> to invert. Need to hop over trouble? Use <code>JUMP</code> to leap straight ahead by one cell without changing direction.</div>
       </div>
 
       <div class="practice-panel">
@@ -496,6 +496,9 @@
     const CONDITION_MAP = {
       'PATH AHEAD CLEAR': {key:'PATH_AHEAD_CLEAR', label:'PATH AHEAD CLEAR', defaultNegated:false},
       'PATH AHEAD BLOCKED': {key:'PATH_AHEAD_CLEAR', label:'PATH AHEAD BLOCKED', defaultNegated:true},
+      'PATH AHEAD NOT VISITED': {key:'PATH_AHEAD_NOT_VISITED', label:'PATH AHEAD NOT VISITED', defaultNegated:false},
+      'CELL NOT VISITED': {key:'CELL_NOT_VISITED', label:'CELL NOT VISITED', defaultNegated:false},
+      'AT EDGE': {key:'AT_EDGE', label:'AT EDGE', defaultNegated:false},
       'ON TREASURE': {key:'ON_TREASURE', label:'ON TREASURE', defaultNegated:false},
       'JUMP CLEAR': {key:'JUMP_CLEAR', label:'JUMP CLEAR', defaultNegated:false},
       'JUMP BLOCKED': {key:'JUMP_CLEAR', label:'JUMP BLOCKED', defaultNegated:true}
@@ -549,6 +552,7 @@
     let startPos = {r:0,c:0};
     let treasurePos = {r:2,c:3};
     let avatar = {r: startPos.r, c: startPos.c, dir: 0}; // dir: 0=up,1=right,2=down,3=left
+    let visitCounts = new Map();
     let running = false;
     let paused = false;
 
@@ -595,6 +599,17 @@
     // Helper utils
     function coordId(r,c){ return `r${r}c${c}` }
     function inBounds(r,c){ return r>=0 && r<gridSize && c>=0 && c<gridSize }
+    function getVisitCount(r,c){
+      return visitCounts.get(coordId(r,c)) || 0;
+    }
+    function incrementVisit(r,c){
+      const id = coordId(r,c);
+      visitCounts.set(id, (visitCounts.get(id) || 0) + 1);
+    }
+    function resetVisitHistory(){
+      visitCounts = new Map();
+      incrementVisit(avatar.r, avatar.c);
+    }
     function ensureGridOption(size){
       if([...gridSizeSelect.options].some(opt => parseInt(opt.value,10)===size)) return;
       const opt = document.createElement('option');
@@ -608,7 +623,8 @@
         start:{...startPos},
         treasure:{...treasurePos},
         avatar:{...avatar},
-        obstacles:Array.from(obstacles)
+        obstacles:Array.from(obstacles),
+        visits:Array.from(visitCounts.entries())
       };
     }
     function restoreMap(snapshot){
@@ -620,6 +636,11 @@
       treasurePos = {...snapshot.treasure};
       avatar = {...snapshot.avatar};
       obstacles = new Set(snapshot.obstacles);
+      if(snapshot.visits){
+        visitCounts = new Map(snapshot.visits);
+      } else {
+        resetVisitHistory();
+      }
       createGrid();
       drawMap();
     }
@@ -631,6 +652,7 @@
       treasurePos = {r: level.treasure.r, c: level.treasure.c};
       avatar = {r:startPos.r, c:startPos.c, dir: level.start.dir ?? 0};
       obstacles = new Set(level.obstacles.map(([r,c])=>coordId(r,c)));
+      resetVisitHistory();
       createGrid();
       drawMap();
     }
@@ -1017,6 +1039,15 @@ ENDIF`;
       let value;
       if(condition.key === 'PATH_AHEAD_CLEAR'){
         value = canMoveForward();
+      } else if(condition.key === 'PATH_AHEAD_NOT_VISITED'){
+        const next = getForwardCell();
+        if(!inBounds(next.r,next.c)) value = false;
+        else if(obstacles.has(coordId(next.r,next.c))) value = false;
+        else value = getVisitCount(next.r,next.c) === 0;
+      } else if(condition.key === 'CELL_NOT_VISITED'){
+        value = getVisitCount(avatar.r, avatar.c) === 1;
+      } else if(condition.key === 'AT_EDGE'){
+        value = avatar.r===0 || avatar.c===0 || avatar.r===gridSize-1 || avatar.c===gridSize-1;
       } else if(condition.key === 'ON_TREASURE'){
         value = avatar.r===treasurePos.r && avatar.c===treasurePos.c;
       } else if(condition.key === 'JUMP_CLEAR'){
@@ -1078,6 +1109,7 @@ ENDIF`;
         if(obstacles.has(coordId(next.r,next.c))) throw new Error('Move would hit an obstacle.');
         avatar.r = next.r;
         avatar.c = next.c;
+        incrementVisit(avatar.r, avatar.c);
       } else if(cmd==='TURN LEFT'){
         avatar.dir = (avatar.dir + 3) % 4;
       } else if(cmd==='TURN RIGHT'){
@@ -1090,6 +1122,7 @@ ENDIF`;
         if(obstacles.has(coordId(landing.r,landing.c))) throw new Error('Jump would land on an obstacle.');
         avatar.r = landing.r;
         avatar.c = landing.c;
+        incrementVisit(avatar.r, avatar.c);
       } else if(cmd==='PICK TREASURE'){
         if(avatar.r===treasurePos.r && avatar.c===treasurePos.c){
           log('🎉 Treasure picked! Well done.');
@@ -1355,6 +1388,7 @@ ENDIF`;
       avatar.r = startPos.r;
       avatar.c = startPos.c;
       avatar.dir = 0;
+      resetVisitHistory();
       programAst = [];
       executionCursor = null;
       programSourceSnapshot = '';
@@ -1409,6 +1443,7 @@ ENDIF`;
         const prev = `${String.fromCharCode(65+startPos.c)}${startPos.r+1}`;
         startPos = {r,c};
         avatar.r = r; avatar.c = c; avatar.dir = 0;
+        resetVisitHistory();
         log(`Moved start from ${prev} to ${String.fromCharCode(65+c)}${r+1}`);
         drawMap();
         return;
@@ -1549,6 +1584,7 @@ ENDIF`;
     window.addEventListener('beforeunload', ()=>{ sessionStorage.setItem('treasure-editor', editor.value); });
     const saved = sessionStorage.getItem('treasure-editor');
     createGrid();
+    resetVisitHistory();
     if(saved) editor.value = saved; else loadDefaultProgram();
     // default obstacles
     obstacles.add(coordId(1,2));
@@ -1577,7 +1613,7 @@ ENDIF`;
     log('Welcome to Treasure Map Adventure!');
     log('Edit the algorithm and press Run or Step. Use REPEAT / WHILE loops and IF / ELSE to react to the map.');
     log('Use the Practice / Challenge toggle to switch between sandbox play and the hall-of-fame run.');
-    log('Conditions available: PATH AHEAD CLEAR, PATH AHEAD BLOCKED, ON TREASURE (add NOT for the opposite).');
+    log('Conditions available: PATH AHEAD CLEAR/BLOCKED, PATH AHEAD NOT VISITED, CELL NOT VISITED, AT EDGE, ON TREASURE, JUMP CLEAR/BLOCKED (add NOT to invert).');
     log('Ready for the hall of fame? Enter your name and hit Start Challenge to solve all maps with one algorithm.');
     log('This playground is lovingly crafted by ATLverse — because clever ideas deserve playful arenas.');
   </script>
